@@ -17,6 +17,37 @@ public class Chess_Com{
     */
     
 //====================================MAIN==========================================
+
+    // ============ GameState: holds all mutable game state ============
+    static class GameState {
+        int[][] ChessBoard = {
+            {14,12,13,16,15,13,12,14},
+            {11,11,11,11,11,11,11,11},
+            {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
+            {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
+            {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
+            {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
+            {1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 },
+            {4 ,2 ,3 ,6 ,5 ,3 ,2 ,4 }
+        };
+        boolean whiteToMove = true;
+        int enPassantRow = 0;
+        int enPassantColunm = 0;
+        int enPassantMoveCount = 0;
+        boolean enPassantAble = false;
+        boolean whiteShortCastle = true;
+        boolean whiteLongCastle = true;
+        boolean blackShortCastle = true;
+        boolean blackLongCastle = true;
+        int fiftyMoveDrawCount = 0;
+        boolean isWhiteResigned = false;
+        boolean isBlackResigned = false;
+        boolean drawOffer = false;
+        boolean drawAccepted = false;
+        ArrayList<String> positionHistory = new ArrayList<>();
+        ArrayList<String> moveHistory = new ArrayList<>();
+    }
+
     public static void main(String[] args) {
 
         Scanner myScanner = new Scanner(System.in);
@@ -32,1197 +63,785 @@ public class Chess_Com{
             //play
             if (respond == 1){
                 clearTerminal();
-                //Chess board piece
-                //=======INITIAL POSITION===========
-                int[][] ChessBoard = {
-                    {14,12,13,16,15,13,12,14},
-                    {11,11,11,11,11,11,11,11},
-                    {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    {1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 },
-                    {4 ,2 ,3 ,6 ,5 ,3 ,2 ,4 }
-                };
-
-                //========CUSTOM POSITION============
-                // int[][] ChessBoard = {
-                //     {15,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,2 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,0 ,11,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,2 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                //     {0 ,0 ,0 ,5 ,0 ,0 ,0 ,0 }
-                // };
-
-                //empty board copy and paste
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 },
-                    // {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 }
-
-                Boolean whiteToMove = true;
-
-                //enPassantAble
-                int enPassantRow = 0;
-                int enPassantColunm = 0;
-                int enPassantMoveCount = 0;
-                boolean enPassantAble = false;
-
-                // 0-0 / 0-0-0Able
-                boolean whiteShortCastle = true;
-                boolean whiteLongCastle = true;
-                boolean blackShortCastle = true;
-                boolean blackLongCastle = true;
-
-                //50 move draw
-                int fiftyMoveDrawCount = 0;
-
-                //resign
-                boolean isWhiteResigned = false;
-                boolean isBlackResigned = false;
-                //draw
-                boolean drawOffer = false;
-                boolean drawAccepted = false;
-
-                //History
-                ArrayList<String> positionHistory = new ArrayList<>();  
-                ArrayList<String> moveHistory = new ArrayList<>();
-
-                
-
-
-
-
-
-
-                //=========================Gameplay===========================
-                //repeat until one user wins OR 50 move draw rule OR not Threefold REpetitiomn OR not insufficientMaterial OR resign
-                while (whatKindOfMate(whiteToMove, ChessBoard) == 0 && fiftyMoveDrawCount < 100 && !isThreefoldRepetition(positionHistory, ChessBoard) && !isInsufficientMaterial(ChessBoard) && !isWhiteResigned && !isBlackResigned && !drawAccepted){
-
-                    String move = "";
-                    int piece = 0;
-                    int row = 0;
-                    int colunm = 0;
-                    boolean validMove = false;
-                    boolean alreadyWrong = false;
-                    boolean ambiguousMove = false;
-                    boolean inCheck = false;
-
-                    
-                    // repeat until user input the correct move notation
-                    while (!validMove){
-
-
-                        // snapshot of the board to check if its in check
-                        int[][] backupBoard = new int[8][8];
-                        for (int i = 0; i < 8; i++) {
-                            backupBoard[i] = Arrays.copyOf(ChessBoard[i], 8);
-                        }
-
-
-                        //draw ChessBoard
-                        clearTerminal();
-                        display(ChessBoard, moveHistory);
-                        System.out.println("______________________________________");
-
-                        // if user have inputed an invalid notation, print this
-                        if (ambiguousMove){
-                            System.out.println("ERROR: Ambiguous move, please specify the piece. (eg: Rae5 / Nbd2 / Nf3d4)");
-                        }
-                        else if (inCheck){
-                            System.out.println("ERROR: You are still in check");
-                        }
-                        else if (alreadyWrong){
-                            System.out.println("ERROR: Illegal move, enter again.");
-                        }
-
-                        //enter a move
-                        if (drawOffer){
-                            System.out.println("Draw offered (y / n): ");
-                            String answer = myScanner.next();
-                            if (answer.equals("y")){
-                                drawAccepted = true;
-                                validMove = true;
-                            }
-                            else{
-                                drawOffer = false;
-                                move = "";
-                                continue;
-                            }
-                        }
-                        else if (whiteToMove){
-                            System.out.println("White to Move");
-                            System.out.print("Enter a move: ");
-                            move = myScanner.next();
-                        }
-                        else{
-                            System.out.println("Black to Move");
-                            System.out.print("Enter a move: ");
-                            move = myScanner.next();
-                        }
-
-
-                        if (enPassantMoveCount >= 1){
-                            enPassantAble = true;
-                            enPassantMoveCount = 0;
-                        }
-                        else{
-                            enPassantAble = false;
-                            enPassantRow = -1;
-                            enPassantColunm = -1;
-                        }
-                        //resign and draw
-
-                        if (move.equals("resign") || move.equals("Resign")){
-                            if (whiteToMove) isWhiteResigned = true;
-                            else isBlackResigned = true;
-                            validMove = true;
-                        }
-                        else if (move.equals("draw") || move.equals("Draw")){
-                            drawOffer = true;
-                            continue;
-                        }
-
-
-                        //actually moves
-                        //======================================Pawn moves BOOOM===========================================
-                        //only possible for 2 character long is pawn move, like e4, d5, a6, etc...
-                        else if (move.length() == 2){
-
-                            //store move info
-                            colunm = alphaToNum(move.charAt(0)) - 1;
-                            row = 8 - Character.getNumericValue(move.charAt(1));
-
-                            //if arrive block is empty, the move is inside the chess board
-                            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && ChessBoard[row][colunm] == 0){
-
-                                //check which pawn to move
-                                int toAdd = 0;
-                                if (whiteToMove) toAdd = 1;
-                                if (!whiteToMove) toAdd = -1;
-
-                                //whosePiece is used to determine if its white or black's piece.
-                                int whosePiece = 1;
-                                if (!whiteToMove) whosePiece += 10;
-
-                                //pawn forward 1 block: if pawn is right behind this block and there is no piece in front, this works
-                                if ((row + toAdd >= 0) && (row + toAdd < 8) && (ChessBoard[row + toAdd][colunm] == whosePiece)){
-                                    validMove = true;
-                                    alreadyWrong = false;
-                                    ChessBoard[row + toAdd][colunm] = 0;
-                                    ChessBoard[row][colunm] = whosePiece;
-                                }
-
-                                //pawn forward 2 block (starter b   oost): if pawn is in starting position, and there is no piece blocking the way, this works
-                                else if ((row + toAdd*2 >= 0) && (row + toAdd*2 < 8) && (ChessBoard[row + (toAdd*2)][colunm] == whosePiece) && (ChessBoard[row + toAdd][colunm] == 0) && ((row + (toAdd * 2) == 1) || (row + (toAdd * 2) == 6))){
-                                    validMove = true;
-                                    alreadyWrong = false;
-                                    ChessBoard[row + (toAdd*2)][colunm] = 0;
-                                    ChessBoard[row][colunm] = whosePiece;
-                                    enPassantMoveCount += 1;
-                                    enPassantRow = row + toAdd;
-                                    enPassantColunm = colunm;
-                                }
-                                else{  //invalid input
-                                    validMove = false;
-                                    alreadyWrong = true;
-                                }
-
-                            }
-                            else{ //invalid input
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                        }
-
-                        //===================================ShortCastling(0-0)===============================================
-                        else if((move.equals("0-0") || move.equals("O-O"))){
-                            int whoseKing = 5;
-                            int whoseRook = 4;
-                            int tempRow = 7;
-                            if(!whiteToMove){
-                                tempRow = 0;
-                                whoseRook += 10;
-                                whoseKing += 10;
-                            }
-                            if (!(ChessBoard[tempRow][7] == whoseRook)){
-                                if (whiteToMove){
-                                    whiteShortCastle = false;
-                                }
-                                else{
-                                    blackShortCastle = false;
-                                }
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                            //if all the way to castel is all safe square and empty
-                            else if ((ChessBoard[tempRow][5] == 0 && ChessBoard[tempRow][6] == 0 && !isThisSquareUnderAttack(tempRow, 4, !whiteToMove, ChessBoard) && !isThisSquareUnderAttack(tempRow, 5, !whiteToMove, ChessBoard) && !isThisSquareUnderAttack(tempRow, 6, !whiteToMove, ChessBoard)) && ((whiteToMove && whiteShortCastle) || (!whiteToMove && blackShortCastle))){
-                                ChessBoard[tempRow][4] = 0;
-                                ChessBoard[tempRow][5] = whoseRook;
-                                ChessBoard[tempRow][6] = whoseKing;
-                                ChessBoard[tempRow][7] = 0;
-                                validMove = true;
-                                alreadyWrong = false;
-                                if (whiteToMove){
-                                    whiteShortCastle = false;
-                                    whiteLongCastle = false;
-                                }
-                                else{
-                                    blackShortCastle = false;
-                                    blackLongCastle = false;
-                                }
-                            }
-                            else{
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                        }
-                        //==========================================LongCastling(0-0-0)=============================================
-                        else if((move.equals("0-0-0") || move.equals("O-O-O"))){
-                            int whoseKing = 5;
-                            int whoseRook = 4;
-                            int tempRow = 7;
-                            if(!whiteToMove){ 
-                                tempRow = 0;
-                                whoseRook += 10;
-                                whoseKing += 10;
-                            }
-
-                            if (!(ChessBoard[tempRow][0] == whoseRook)){
-                                if (whiteToMove){
-                                    whiteLongCastle = false;
-                                }
-                                else{
-                                    blackLongCastle = false;
-                                }
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                            //if all the way to castel is all safe square and empty
-                            else if ((ChessBoard[tempRow][3] == 0 && ChessBoard[tempRow][2] == 0 && ChessBoard[tempRow][1] == 0 && !isThisSquareUnderAttack(tempRow, 4, !whiteToMove, ChessBoard) && !isThisSquareUnderAttack(tempRow, 3, !whiteToMove, ChessBoard) && !isThisSquareUnderAttack(tempRow, 2, !whiteToMove, ChessBoard)) && ((whiteToMove && whiteLongCastle) || (!whiteToMove && blackLongCastle))){
-                                ChessBoard[tempRow][4] = 0;
-                                ChessBoard[tempRow][3] = whoseRook;
-                                ChessBoard[tempRow][2] = whoseKing;
-                                ChessBoard[tempRow][0] = 0;
-                                validMove = true;
-                                alreadyWrong = false;
-                                if (whiteToMove){
-                                    whiteShortCastle = false;
-                                    whiteLongCastle = false;
-                                }
-                                else{
-                                    blackShortCastle = false;
-                                    blackLongCastle = false;
-                                }
-                            }
-                            else{
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                        }
-                        
-
-
-
-                        //=========================Minor/Major piece move==========================
-                        //=============================Takes=Takes=Takes=Takes=Takes=Here=There=Takes=Takes=yea im winning -Hikaru-=============================
-                        
-                        //2026-02-23[Update]: i combined Movelength 4 here so i dont have to copy and paste the gigantic piece moving thing in movelength 4.
-                        //                    i will think about ambiguous moves later uugh
-                        //2026-02-24[Update]: i will change the else if statement right below it and add som if statement for Ambiguous moves
-                        else if(move.length() == 3 || move.length() == 4 && Character.isUpperCase(move.charAt(0)) || move.length() == 5 && Character.isUpperCase(move.charAt(0))){
-                            
-                            boolean takes = false;
-                            char specify = ' ';
-                            boolean successfulMove = true;
-
-                            //length 3 only possible like Nf3, Qe4, Bb3, etc.
-                            if (move.length() == 3){
-                                piece = PieceToNum(move.charAt(0));
-                                colunm = alphaToNum(move.charAt(1)) - 1;
-                                row = 8 - Character.getNumericValue(move.charAt(2));
-                            }
-                            // Piece Takes Piece (eg. Nxe5, Qxg7) / Pawn takes piece (eg. exd5, axb3)+ EN PASSANT / Ambiguous moves (eg. Rad1, R2e7) how tf i mak tis hell naw
-                            //here i only considered Piece takes Piece.
-                            else if (move.length() == 4 && move.charAt(1) == 'x' && (move.charAt(2) >= 'a' && move.charAt(2) <= 'h') && (move.charAt(3) >= '1' && move.charAt(3) <= '8')){
-                                piece = PieceToNum(move.charAt(0));
-                                colunm = alphaToNum(move.charAt(2)) - 1;
-                                row = 8 - Character.getNumericValue(move.charAt(3));
-                                takes = true;
-                            }
-                            //if 4 digit and second is among abcdefgh or 12345678 then its ambiguoussie movvie muhehe
-                // explain below    |-----4digit------| AND |------------------if 2nd is among abcdefgh-----------------| OR |-------------------if 2nd is among 12345678-----------------| AND |--------------------------------if the 3rd letter is abcdefgh and 4nd is 12345678--------------------------------------|
-                            else if (move.length() == 4 && ((move.charAt(1) >= 'a' && move.charAt(1) <= 'h') || (move.charAt(1) >= '1' && move.charAt(1) <= '8')) && (move.charAt(2) >= 'a' && move.charAt(2) <= 'h') && (move.charAt(3) >= '1' && move.charAt(3) <= '8')){
-                                piece = PieceToNum(move.charAt(0));
-                                colunm = alphaToNum(move.charAt(2)) - 1;
-                                row = 8 - Character.getNumericValue(move.charAt(3));
-                                specify = move.charAt(1);
-                            }
-                            else if (move.length() == 5 && move.charAt(2) == 'x' && ((move.charAt(1) >= 'a' && move.charAt(1) <= 'h') || (move.charAt(1) >= '1' && move.charAt(1) <= '8')) && (move.charAt(3) >= 'a' && move.charAt(3) <= 'h') && (move.charAt(4) >= '1' && move.charAt(4) <= '8')){
-                                piece = PieceToNum(move.charAt(0));
-                                colunm = alphaToNum(move.charAt(3)) - 1;
-                                row = 8 - Character.getNumericValue(move.charAt(4));
-                                specify = move.charAt(1);
-                                takes = true;
-                            }
-                            else{
-                                successfulMove = false;
-                            }
-                            //if its a capturing move, and there is nothing to capture, invalid move
-                            if (takes && ChessBoard[row][colunm] == 0){
-                                alreadyWrong = true;
-                                validMove = false;
-                                successfulMove = false;
-                            }
-
-                            //below, there will be each piece code, in order of Knight-> Bishop-> Rook-> King-> Queen.
-                            if (successfulMove){
-
-                                //determine white or black's piece
-                                int whosePiece = piece;
-                                if (!whiteToMove) whosePiece += 10;
-
-                                //================================The knight==================================
-                                if (piece == 2){
-                                    
-                                    //if arrive is inside the board, and its empty place or enemy piece
-                                    if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && (ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(ChessBoard[row][colunm], whosePiece))){
-                                        
-                                        // if you add the same index of verti and hori from certain location, you will get every possible knight move.
-                                        // index: (0=NE, 1=NW, 2=EN, 3=WN, 4=ES, 5=WS, 6=SE, 7=SW) top to bot zigzag
-                                        int[] knightJumpVertical =   {+2, +2, +1, +1, -1, -1, -2, -2};
-                                        int[] knightJumpHorizontal = {+1, -1, +2, -2, +2, -2, +1, -1};
-
-                                        //used when there is 1 or more knight can move to this block
-                                        int knightCount = 0;
-                                        ArrayList<Integer> knightColumn = new ArrayList<>();
-                                        ArrayList<Integer> knightRow = new ArrayList<>();
-
-                                        // check every possible knight location from the input block
-                                        for (int i = 0; i < 8; i ++){
-                                            
-                                            //check if the knight move is not out of bound(prevent error)
-                                            if (((colunm + knightJumpHorizontal[i] >= 0) && (colunm + knightJumpHorizontal[i] <= 7)) && ((row + knightJumpVertical[i] >= 0) && (row + knightJumpVertical[i] <= 7))){
-
-                                                //check if there is a knight
-                                                if(ChessBoard[row + knightJumpVertical[i]][colunm + knightJumpHorizontal[i]] == whosePiece){
-                                                    knightCount += 1;
-                                                    //store the knight's coordinate
-                                                    knightColumn.add(colunm + knightJumpHorizontal[i]);
-                                                    knightRow.add(row + knightJumpVertical[i]);
-                                                }
-                                            }
-                                        }
-
-                                        //if there is an available knight
-                                        if (knightCount >= 1){
-                                            if (knightCount == 1){
-                                                validMove = true;
-                                                alreadyWrong = false;
-                                                ChessBoard[knightRow.get(0)][knightColumn.get(0)] = 0;
-                                                ChessBoard[row][colunm] = whosePiece;
-                                            }
-                                            else if (specify != ' '){ //if there are more than 1 knight available AMBIGUOUS move
-                                                //temporary variables
-                                                int countHasToBe1 = 0;
-                                                int kCol = 0;
-                                                int kRow = 0;
-                                                //if the ambiguous input is telling about column
-                                                if (specify >= 'a' && specify <= 'h'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < knightCount; i ++){
-                                                        if (knightColumn.get(i) == alphaToNum(specify) - 1){
-                                                            kCol = knightColumn.get(i);
-                                                            kRow = knightRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece on that column
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[kRow][kCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                // if the ambiguous input is telling about row
-                                                else if (specify >= '1' && specify <= '8'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < knightCount; i ++){
-                                                        if (knightRow.get(i) == (8 - Character.getNumericValue(specify))){
-                                                            kCol = knightColumn.get(i);
-                                                            kRow = knightRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece in that row
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[kRow][kCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                else{
-                                                    validMove = false;
-                                                    alreadyWrong = true;
-                                                }
-                                            }
-                                            else{  //if input didnt specify ambiguous then its invalid move 
-                                                validMove = false;
-                                                ambiguousMove = true;
-                                            }
-                                        }
-                                        else{  //if there is no knight its invalid
-                                            validMove = false;
-                                            alreadyWrong = true;
-                                        }
-
-                                    }
-                                    else{   //invalid move
-                                        validMove = false;
-                                        alreadyWrong = true;
-                                    }
-
-                                }
-
-                                //============================The Bishop================================
-                                else if (piece == 3){
-                                    
-                                    //if arrive is empty, and inside the board
-                                    if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && (ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(ChessBoard[row][colunm], whosePiece))){
-
-                                        //add the same index to get diagonal movement, multiply by an integer to get long movement.
-                                        //index: (0 = NE, 1 = NW, 2 = SW, 3 = SE) counterclockwise
-                                        int[] bishopMoveVertical = {+1, +1, -1, -1};
-                                        int[] bishopMoveHorizontal = {+1, -1, -1, +1};
-
-                                        int bishopCount = 0;
-                                        ArrayList<Integer> bishopColumn = new ArrayList<>();
-                                        ArrayList<Integer> bishopRow = new ArrayList<>();
-
-                                        // get the maximum possible range on each direction.
-                                        for (int i = 0; i < 4; i ++){
-
-                                            int magnitude = 1;
-                                            //go all the way until it is out of board or hit a piece
-                                            while ((row + (bishopMoveVertical[i] * magnitude) >= 0) && (colunm + (bishopMoveHorizontal[i] * magnitude) >= 0) && (row + (bishopMoveVertical[i] * magnitude) <= 7) && (colunm + (bishopMoveHorizontal[i] * magnitude) <= 7)){
-                                                //if there is bishop, store in bishop.
-                                                if (ChessBoard[row + bishopMoveVertical[i] * magnitude][colunm + (bishopMoveHorizontal[i] * magnitude)] == whosePiece){
-                                                    bishopCount += 1;
-                                                    bishopColumn.add(colunm + (bishopMoveHorizontal[i] * magnitude));
-                                                    bishopRow.add(row + (bishopMoveVertical[i] * magnitude));
-                                                    break;
-                                                }
-                                                //if there is nothing, keep going
-                                                else if (ChessBoard[row + bishopMoveVertical[i] * magnitude][colunm + (bishopMoveHorizontal[i] * magnitude)] == 0){
-                                                    magnitude += 1;
-                                                }
-                                                else{ //if there is piece, bishop cant go so break
-                                                    break;
-                                                }
-                                            }
-
-                                        }
-                                        if (bishopCount >= 1){
-                                            if (bishopCount == 1){
-                                                validMove = true;
-                                                alreadyWrong = false;
-                                                ChessBoard[bishopRow.get(0)][bishopColumn.get(0)] = 0;
-                                                ChessBoard[row][colunm] = whosePiece;
-                                            }
-                                            else if (specify != ' '){ //if there are more than 1 bishop available AMBIGUOUS move
-                                                //temporary variables
-                                                int countHasToBe1 = 0;
-                                                int bCol = 0;
-                                                int bRow = 0;
-                                                //if the ambiguous input is telling about column
-                                                if (specify >= 'a' && specify <= 'h'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < bishopCount; i ++){
-                                                        if (bishopColumn.get(i) == alphaToNum(specify) - 1){
-                                                            bCol = bishopColumn.get(i);
-                                                            bRow = bishopRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece on that column
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[bRow][bCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                // if the ambiguous input is telling about row
-                                                else if (specify >= '1' && specify <= '8'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < bishopCount; i ++){
-                                                        if (bishopRow.get(i) == (8 - Character.getNumericValue(specify))){
-                                                            bCol = bishopColumn.get(i);
-                                                            bRow = bishopRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece in that row
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[bRow][bCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                else{
-                                                    validMove = false;
-                                                    alreadyWrong = true;
-                                                }
-                                            }
-                                            else{
-                                                validMove = false;
-                                                ambiguousMove = true;
-                                            }
-                                        }
-                                        else{
-                                            validMove = false;
-                                            alreadyWrong = true;
-                                        }
-
-                                    }
-                                    else{
-                                        validMove = false;
-                                        alreadyWrong = true;
-                                    }
-                                }
-                                //===============================THE ROOOOOOOOOK================================
-                                else if (piece == 4){
-
-                                    //if arrive is empty, and inside the board
-                                    if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && (ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(ChessBoard[row][colunm], whosePiece))){
-
-                                        //add the same index to get straight movement, multiply by an integer to get long movement.
-                                        //index: (0 = N, 1 = W, 2 = S, 3 = E) counterclockwise
-                                        int[] rookMoveVertical = {1, 0, -1, 0};
-                                        int[] rookMoveHorizontal = {0, -1, 0, 1};
-
-                                        int rookCount = 0;
-                                        ArrayList<Integer> rookColumn = new ArrayList<>();
-                                        ArrayList<Integer> rookRow = new ArrayList<>();
-
-                                        for (int i = 0; i < 4; i ++){
-
-                                            int magnitude = 1;
-                                            //go all the way until it is out of board
-                                            while ((row + (rookMoveVertical[i] * magnitude) >= 0) && (colunm + (rookMoveHorizontal[i] * magnitude) >= 0) && (row + (rookMoveVertical[i] * magnitude) <= 7) && (colunm + (rookMoveHorizontal[i] * magnitude) <= 7)){
-                                                //if there is rook, store in rook list.
-                                                if (ChessBoard[row + rookMoveVertical[i] * magnitude][colunm + (rookMoveHorizontal[i] * magnitude)] == whosePiece){
-                                                    rookCount += 1;
-                                                    rookColumn.add(colunm + (rookMoveHorizontal[i] * magnitude));
-                                                    rookRow.add(row + (rookMoveVertical[i] * magnitude));
-                                                    break;
-                                                }
-                                                //if there is nothing, keep going
-                                                else if (ChessBoard[row + rookMoveVertical[i] * magnitude][colunm + (rookMoveHorizontal[i] * magnitude)] == 0){
-                                                    magnitude += 1;
-                                                }
-                                                else{ // rook cant go so break
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (rookCount >= 1){
-                                            if (rookCount == 1){
-                                                validMove = true;
-                                                alreadyWrong = false;
-                                                ChessBoard[rookRow.get(0)][rookColumn.get(0)] = 0;
-                                                ChessBoard[row][colunm] = whosePiece;
-
-                                                //disable casteling
-                                                if (whiteToMove){
-                                                    if (rookColumn.get(0) == 7){
-                                                        whiteShortCastle = false;
-                                                    }  
-                                                    else if (rookColumn.get(0) == 0){
-                                                        whiteLongCastle = false;
-                                                    }
-                                                }
-                                                else{
-                                                    if (rookColumn.get(0) == 7){
-                                                        blackShortCastle = false;
-                                                    }  
-                                                    else if (rookColumn.get(0) == 0){
-                                                        blackLongCastle = false;
-                                                    }
-                                                }
-                                            }
-                                            else if (specify != ' '){ //if there are more than 1 rook available AMBIGUOUS move
-                                                //temporary variables
-                                                int countHasToBe1 = 0;
-                                                int rCol = 0;
-                                                int rRow = 0;
-                                                //if the ambiguous input is telling about column
-                                                if (specify >= 'a' && specify <= 'h'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < rookCount; i ++){
-                                                        if ( rookColumn.get(i) == alphaToNum(specify) - 1){
-                                                            rCol =  rookColumn.get(i);
-                                                            rRow = rookRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece on that column
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[rRow][rCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-
-                                                        //disable casteling
-                                                        if (whiteToMove){
-                                                            if (rCol == 7){
-                                                                whiteShortCastle = false;
-                                                            }  
-                                                            else if (rCol == 0){
-                                                                whiteLongCastle = false;
-                                                            }
-                                                        }
-                                                        else{
-                                                            if (rCol == 7){
-                                                                blackShortCastle = false;
-                                                            }  
-                                                            else if (rCol == 0){
-                                                                blackLongCastle = false;
-                                                            }
-                                                        }
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                // if the ambiguous input is telling about row
-                                                else if (specify >= '1' && specify <= '8'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < rookCount; i ++){
-                                                        if (rookRow.get(i) == (8 - Character.getNumericValue(specify))){
-                                                            rCol =  rookColumn.get(i);
-                                                            rRow = rookRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece in that row
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[rRow][rCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-
-                                                        //disable casteling
-                                                        if (whiteToMove){
-                                                            if (rCol == 7){
-                                                                whiteShortCastle = false;
-                                                            }  
-                                                            else if (rCol == 0){
-                                                                whiteLongCastle = false;
-                                                            }
-                                                        }
-                                                        else{
-                                                            if (rCol == 7){
-                                                                blackShortCastle = false;
-                                                            }  
-                                                            else if (rCol == 0){
-                                                                blackLongCastle = false;
-                                                            }
-                                                        }
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                else{
-                                                    validMove = false;
-                                                    alreadyWrong = true;
-                                                }
-                                            }
-                                            else{
-                                                validMove = false;
-                                                ambiguousMove = true;
-                                            }
-                                        }
-                                        else{
-                                            validMove = false;
-                                            alreadyWrong = true;
-                                        }
-                                    }
-                                    else{
-                                        validMove = false;
-                                        alreadyWrong = true;
-                                    }
-                                }
-
-                                //================================The King====================================
-                                else if (piece == 5){
-
-                                    //if arrive is empty, and inside the board
-                                    if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && (ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(ChessBoard[row][colunm], whosePiece))){
-
-                                        //add the same index to get straight movement, multiply by an integer to get long movement.
-                                        //index: (N-NW-W-SW-S-SE-E-NE) counterclockwise
-                                        int[] kingMoveVertical = {1, 1, 0, -1, -1, -1, 0, 1};
-                                        int[] kingMoveHorizontal = {0, -1, -1, -1, 0, 1, 1, 1};
-                                        boolean isKingMoved = false;
-                                        // dont need kingcount since there is only 1 king on game
-
-                                        //check all direction
-                                        for (int i = 0; i < 8; i ++){
-
-                                            if ((colunm + kingMoveHorizontal[i] >= 0) && (colunm + kingMoveHorizontal[i] <= 7) && (row + kingMoveVertical[i] >= 0) && (row + kingMoveVertical[i] <= 7)){
-                                                
-                                                //if there is a king, move the king and break the loop since theres only 1 king
-                                                if(ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] == whosePiece){
-                                                    ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] = 0;
-
-                                                    if (isThisSquareUnderAttack(row, colunm, !whiteToMove, ChessBoard)){
-                                                        ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] = whosePiece;
-                                                        break;
-                                                    }
-                                                    else{
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        isKingMoved = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (isKingMoved){
-                                            validMove = true;
-                                            alreadyWrong = false;
-                                            if (whiteToMove){
-                                                whiteLongCastle = false;
-                                                whiteShortCastle = false;
-                                            }
-                                            else{
-                                                blackLongCastle = false;
-                                                blackShortCastle = false;
-                                            }
-                                        }
-                                        else{
-                                            validMove = false;
-                                            alreadyWrong = true;
-                                        }
-                                    }
-                                    else{
-                                        validMove = false;
-                                        alreadyWrong = true;
-                                    }
-
-                                }
-
-                                //==================================The Queen==============================
-                                else if (piece == 6){
-
-                                    //if arrive is empty, and inside the board
-                                    if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && (ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(ChessBoard[row][colunm], whosePiece))){
-
-                                        //add the same index to get straight movement, multiply by an integer to get long movement.
-                                        //index: (N-NW-W-SW-S-SE-E-NE) counterclockwis Same as king
-                                        int[] queenMoveVertical = {1, 1, 0, -1, -1, -1, 0, 1};
-                                        int[] queenMoveHorizontal = {0, -1, -1, -1, 0, 1, 1, 1};
-
-                                        int queenCount = 0;
-                                        ArrayList<Integer> queenColumn = new ArrayList<>();
-                                        ArrayList<Integer> queenRow = new ArrayList<>();
-
-                                        //queen has 8 direction so check all 8 direction
-                                        for (int i = 0; i < 8; i ++){
-
-                                            int magnitude = 1;
-                                            //go all the way until it is out of board or hit a piece
-                                            while ((row + (queenMoveVertical[i] * magnitude) >= 0) && (colunm + (queenMoveHorizontal[i] * magnitude) >= 0) && (row + (queenMoveVertical[i] * magnitude) <= 7) && (colunm + (queenMoveHorizontal[i] * magnitude) <= 7)){
-                                                //if there is queen, store the coordination in queen list.
-                                                if (ChessBoard[row + queenMoveVertical[i] * magnitude][colunm + (queenMoveHorizontal[i] * magnitude)] == whosePiece){
-                                                    queenCount += 1;
-                                                    queenColumn.add(colunm + (queenMoveHorizontal[i] * magnitude));
-                                                    queenRow.add(row + (queenMoveVertical[i] * magnitude));
-                                                    break;
-                                                }
-                                                //if there is nothing, keep going
-                                                else if (ChessBoard[row + queenMoveVertical[i] * magnitude][colunm + (queenMoveHorizontal[i] * magnitude)] == 0){
-                                                    magnitude += 1;
-                                                }
-                                                else{ //if there is piece, queen cant go over it so break
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (queenCount >= 1){
-                                            if (queenCount == 1){
-                                                validMove = true;
-                                                alreadyWrong = false;
-                                                ChessBoard[queenRow.get(0)][queenColumn.get(0)] = 0;
-                                                ChessBoard[row][colunm] = whosePiece;
-                                            }
-                                            else if (specify != ' '){ //if there are more than 1 queen available AMBIGUOUS move
-                                                //temporary variables
-                                                int countHasToBe1 = 0;
-                                                int qCol = 0;
-                                                int qRow = 0;
-                                                //if the ambiguous input is telling about column
-                                                if (specify >= 'a' && specify <= 'h'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < queenCount; i ++){
-                                                        if ( queenColumn.get(i) == alphaToNum(specify) - 1){
-                                                            qCol =  queenColumn.get(i);
-                                                            qRow = queenRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece on that column
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[qRow][qCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                // if the ambiguous input is telling about row
-                                                else if (specify >= '1' && specify <= '8'){
-                                                    //check all the ambiguous lists
-                                                    for (int i = 0; i < queenCount; i ++){
-                                                        if (queenRow.get(i) == (8 - Character.getNumericValue(specify))){
-                                                            qCol =  queenColumn.get(i);
-                                                            qRow = queenRow.get(i);
-                                                            countHasToBe1 += 1;
-                                                        }
-                                                    }
-                                                    //if there is only one piece in that row
-                                                    if (countHasToBe1 == 1){
-                                                        ChessBoard[qRow][qCol] = 0;
-                                                        ChessBoard[row][colunm] = whosePiece;
-                                                        validMove = true;
-                                                        alreadyWrong = false;
-                                                    }
-                                                    else{
-                                                        validMove = false;
-                                                        ambiguousMove = true;
-                                                    }
-                                                }
-                                                else{
-                                                    validMove = false;
-                                                    alreadyWrong = true;
-                                                }
-                                            }
-                                            else{
-                                                validMove = false;
-                                                ambiguousMove = true;
-                                            }
-                                        }
-                                        else{
-                                            validMove = false;
-                                            alreadyWrong = true;
-                                        }
-                                    }
-                                    else{
-                                        validMove = false;
-                                        alreadyWrong = true;
-                                    }
-
-                                }
-                                // ###NeedToADD###### Casteling like if input has 0 inside it do the casteling
-
-                                else{ //idk what u input but you moved something else outside the chessboard like how?
-                                    validMove = false;
-                                    alreadyWrong = true;
-                                }
-
-                            }
-                            else{
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-                            
-                        }
-
-                        //==========================================Pawn Takes========================================
-                        //if first is lowercase(a~f) and second is 'x' capture, and 4 length long, axaa kind of comb woudl possibl
-                        //i wil filture the wrong ones inside this else if thingie
-                        else if (move.length() == 4 && Character.isLowerCase(move.charAt(0)) && move.charAt(1) == 'x'){
-
-                            //variable set
-                            //if da last coordinate thingie is inside chessboard
-                            if (move.length() == 4 && (move.charAt(2) >= 'a' && move.charAt(2) <= 'h') && (move.charAt(3) >= '1' && move.charAt(3) <= '8') && move.charAt(0) >= 'a' && move.charAt(0) <= 'h'){
-                                int pawn = alphaToNum(move.charAt(0)) - 1;
-                                colunm = alphaToNum(move.charAt(2)) - 1;
-                                row = 8 - Character.getNumericValue(move.charAt(3));
-
-                                //whose pawn is this
-                                int whosePiece = 1;
-                                if (!whiteToMove) whosePiece += 10;
-
-                                //pawn direction setting
-                                int toAdd = 0;
-                                if (whiteToMove) toAdd = 1;
-                                if (!whiteToMove) toAdd = -1;
-
-                                //if target is in 1 diagonal of pawn, and there is a piece on target, capture
-                                if ((row + toAdd >= 0) && (row + toAdd < 8) && (ChessBoard[row][colunm] != 0) && (ChessBoard[row + toAdd][pawn] == whosePiece) && (colunm + 1 == pawn || colunm - 1 == pawn)){
-                                    ChessBoard[row][colunm] = whosePiece;
-                                    ChessBoard[row + toAdd][pawn] = 0;
-                                    validMove = true;
-                                    alreadyWrong = false;
-                                }
-                                //ENPASSAANANNTTHHH
-                                else if (enPassantAble && row == enPassantRow && colunm == enPassantColunm && (ChessBoard[row + toAdd][pawn] == whosePiece) && (colunm + 1 == pawn || colunm - 1 == pawn) && (ChessBoard[row][colunm] == 0)){
-                                    ChessBoard[row][colunm] = whosePiece;
-                                    ChessBoard[row + toAdd][pawn] = 0;
-                                    //remove da enPassant'ed pawn
-                                    ChessBoard[row + toAdd][colunm] = 0;
-                                    validMove = true;
-                                    alreadyWrong = false;
-
-                                }
-                                else{
-                                    validMove = false;
-                                    alreadyWrong = true;
-                                }
-                            }
-                            //inval inp
-                            else{
-                                validMove = false;
-                                alreadyWrong = true;
-                            }
-
-                        }
-
-
-                    //le triangle le triangle
-                    //un deux trois
-                    //EXPLOSION DE RAQUETTE
-                    //un deux trois
-                    //un deux trois quatre
-                    //Attention Attention le triangle
-                    //un deux trois ooooffff
-                    //le triangle le triangle
-                    //un deux trois quatre cinq
-                    //Attention Attention EXPLOSION DE RAQUETTE
-                    //un deux trois
-                    //le triangle
-                    //le triangle
-                            
-
-
-                        else{  //invalid input
-                            validMove = false;
-                            alreadyWrong = true;
-                        }
-
-                        //Detect if the move is illegal because there is a king under check and u moved other thingie
-                        if (validMove){
-
-                            //set the king piece white or blak
-                            int myKing = 5;
-                            if (!whiteToMove) {
-                                myKing = 15;
-                            }
-                            int kingRow = -1;
-                            int kingCol = -1;
-
-                            //find the king
-                            for (int i = 0; i < 8; i++) {
-                                for (int j = 0; j < 8; j++) {
-                                    if (ChessBoard[i][j] == myKing) {
-                                        kingRow = i;
-                                        kingCol = j;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            //detect if king is still in check(i prevent this at king move but there are possibility of Double CHeck)
-                            if (isThisSquareUnderAttack(kingRow, kingCol, !whiteToMove, ChessBoard)){
-                                validMove = false;
-                                inCheck = true;
-
-                                //Undo the board 
-                                for (int i = 0; i < 8; i++) {
-                                    ChessBoard[i] = Arrays.copyOf(backupBoard[i], 8);
-                                }
-                                
-                            }
-                        }
-
-                        //================================PAWN PROMOTION==============================
-                        if (validMove) {
-                            int promotionRow = 0;
-                            if (!whiteToMove) promotionRow = 7;
-                            int promotingPawn = 1;
-                            if (!whiteToMove) promotingPawn = 11;
-            
-                            for (int col = 0; col < 8; col++) {
-                                if (ChessBoard[promotionRow][col] == promotingPawn) {
-                                    clearTerminal();
-                                    display(ChessBoard, moveHistory);
-                                    System.out.println("______________________________________");
-
-                                    char choice = ' ';
-                                    boolean correctPiece = true;
-                                    while (choice != 'Q' && choice != 'R' && choice != 'B' && choice != 'N'){
-                                        if (correctPiece){
-                                            correctPiece = false;
-                                            System.out.print("Choose piece (Q/R/B/N): ");
-                                        }
-                                        else{
-                                            System.out.print("Invalid. Please choose among these (Q/R/B/N): ");
-                                        }
-                                        choice = myScanner.next().toUpperCase().charAt(0);
-                                    }
-                                    int promotedPiece = 0;
-                                    if (choice == 'Q'){
-                                        promotedPiece = 6;
-                                    }
-                                    else if (choice == 'R'){
-                                        promotedPiece = 4;
-                                    }
-                                    else if (choice == 'B'){
-                                        promotedPiece = 3;
-                                    }
-                                    else if (choice == 'N'){
-                                        promotedPiece = 2;
-                                    }
-                                    else{
-
-                                    }
-                                    if (!whiteToMove) promotedPiece += 10;
-                                    ChessBoard[promotionRow][col] = promotedPiece;
-                                }
-                            }
-                        }
-
-                        if (validMove){
-                            //50 move rule count
-                            boolean isCapture = (backupBoard[row][colunm] != 0);
-                            boolean isPawnMove = (ChessBoard[row][colunm] % 10 == 1);
-                            if (isCapture || isPawnMove) fiftyMoveDrawCount = 0;
-                            else fiftyMoveDrawCount++;
-                            //save the position
-                            positionHistory.add(boardToString(ChessBoard));
-
-                            //Game Log Setting
-                            String moveLog = move;
-
-                            if (move.equals("O-O")) moveLog = "0-0";
-                            else if (move.equals("O-O-O")) moveLog = "0-0-0";
-                            else{
-                                //if Piece takes Piece but there is no x, add x to indicate this is capture
-                                if (isCapture && move.length() == 3 && Character.isUpperCase(move.charAt(0))){
-                                    moveLog = move.charAt(0) + "x" + move.substring(1);
-                                }
-                                //if Check or Checkmate, add + or #
-                                int enemyKing = 5;
-                                if (whiteToMove) enemyKing = 15;
-                                int enemyKingRow = 0;
-                                int enemyKingCol = 0;
-                                for (int i = 0; i < 8; i ++){
-                                    for (int j = 0; j < 8; j ++){
-                                        if (ChessBoard[i][j] == enemyKing){
-                                            enemyKingRow = i;
-                                            enemyKingCol = j;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (isThisSquareUnderAttack(enemyKingRow, enemyKingCol, whiteToMove, ChessBoard)){
-                                    if (whatKindOfMate(!whiteToMove, ChessBoard) == 1) moveLog += "#";
-                                    else moveLog += "+";
-                                }
-
-                            }
-                            moveHistory.add(moveLog);
-                        }
-
-
-                        //if the move is correct, change the player
-                        if (validMove && whiteToMove){
-                            whiteToMove = false;
-                        }
-                        else if (validMove && !whiteToMove){
-                            whiteToMove = true;
-                        }
-
-                    }
-                    clearTerminal();
-
-
-                }
-
-                //=============game end, display chessboard and declair who wins or draw===============
-
-                display(ChessBoard, moveHistory);
-                System.out.println("______________________________________");
-
-                if (isBlackResigned || isWhiteResigned){
-                    System.out.println("Resigned!");
-                    if(isWhiteResigned) System.out.println("Black wins!!  (0 - 1)");
-                    else System.out.println("White WIns!!  (1 - 0)");
-                }
-                else if (drawAccepted){
-                    System.out.println("Draw by agreement!");
-                    System.out.println("(1/2 - 1/2)");
-                }
-                else if (fiftyMoveDrawCount >= 100){
-                    System.out.println("Draw by 50-move Rule!");
-                    System.out.println("(1/2 - 1/2)");
-                }
-                else if (isInsufficientMaterial(ChessBoard)){
-                    System.out.println("Draw by Insuficient Material!");
-                    System.out.println("(1/2 - 1/2)");
-                }
-                else if (isThreefoldRepetition(positionHistory, ChessBoard)){
-                    System.out.println("Draw by Threefold Repetition!");
-                    System.out.println("(1/2 - 1/2)");
-                }
-                else if (whatKindOfMate(whiteToMove, ChessBoard) == 1){
-                    System.out.println("Checkmate!");
-                    if (whiteToMove) System.out.println("Black wins!!  (0 - 1)");
-                    else System.out.println("White wins!!  (1 - 0)");
-                }
-                else{
-                    System.out.println("Stalemate!");
-                    System.out.println("(1/2 - 1/2)");
-                }
-
+                GameState gs = initGame();
+                runGame(myScanner, gs);
+                displayGameResult(gs);
             }
             else if (respond == 2){
+                showHelp(myScanner);
+            }
+        }
+    }
+
+    // ============ initGame: initialize and return a fresh GameState ============
+    public static GameState initGame() {
+        return new GameState();
+    }
+
+    // ============ runGame: main game loop ============
+    public static void runGame(Scanner myScanner, GameState gs) {
+        while (whatKindOfMate(gs.whiteToMove, gs.ChessBoard) == 0
+                && gs.fiftyMoveDrawCount < 100
+                && !isThreefoldRepetition(gs.positionHistory, gs.ChessBoard)
+                && !isInsufficientMaterial(gs.ChessBoard)
+                && !gs.isWhiteResigned
+                && !gs.isBlackResigned
+                && !gs.drawAccepted) {
+
+            handleTurn(myScanner, gs);
+            clearTerminal();
+        }
+    }
+
+    // ============ handleTurn: process one full turn until a valid move is made ============
+    public static void handleTurn(Scanner myScanner, GameState gs) {
+        String move = "";
+        boolean validMove = false;
+        boolean alreadyWrong = false;
+        boolean ambiguousMove = false;
+        boolean inCheck = false;
+
+        while (!validMove) {
+            // snapshot of the board to check if its in check
+            int[][] backupBoard = new int[8][8];
+            for (int i = 0; i < 8; i++) {
+                backupBoard[i] = Arrays.copyOf(gs.ChessBoard[i], 8);
+            }
+
+            // draw ChessBoard
+            clearTerminal();
+            display(gs.ChessBoard, gs.moveHistory);
+            System.out.println("______________________________________");
+
+            if (ambiguousMove) {
+                System.out.println("ERROR: Ambiguous move, please specify the piece. (eg: Rae5 / Nbd2 / Nf3d4)");
+            } else if (inCheck) {
+                System.out.println("ERROR: You are still in check");
+            } else if (alreadyWrong) {
+                System.out.println("ERROR: Illegal move, enter again.");
+            }
+
+            // draw offer handling
+            if (gs.drawOffer) {
+                System.out.println("Draw offered (y / n): ");
+                String answer = myScanner.next();
+                if (answer.equals("y")) {
+                    gs.drawAccepted = true;
+                    validMove = true;
+                } else {
+                    gs.drawOffer = false;
+                    move = "";
+                    continue;
+                }
+            } else if (gs.whiteToMove) {
+                System.out.println("White to Move");
+                System.out.print("Enter a move: ");
+                move = myScanner.next();
+            } else {
+                System.out.println("Black to Move");
+                System.out.print("Enter a move: ");
+                move = myScanner.next();
+            }
+
+            // enPassant counter
+            if (gs.enPassantMoveCount >= 1) {
+                gs.enPassantAble = true;
+                gs.enPassantMoveCount = 0;
+            } else {
+                gs.enPassantAble = false;
+                gs.enPassantRow = -1;
+                gs.enPassantColunm = -1;
+            }
+
+            // resign / draw commands
+            if (move.equals("resign") || move.equals("Resign")) {
+                if (gs.whiteToMove) gs.isWhiteResigned = true;
+                else gs.isBlackResigned = true;
+                validMove = true;
+            } else if (move.equals("draw") || move.equals("Draw")) {
+                gs.drawOffer = true;
+                continue;
+            }
+            // pawn move (e4, d5, ...)
+            else if (move.length() == 2) {
+                int[] result = handlePawnMove(move, gs);
+                validMove = result[0] == 1;
+                alreadyWrong = result[1] == 1;
+            }
+            // short castle
+            else if (move.equals("0-0") || move.equals("O-O")) {
+                int[] result = handleShortCastle(gs);
+                validMove = result[0] == 1;
+                alreadyWrong = result[1] == 1;
+            }
+            // long castle
+            else if (move.equals("0-0-0") || move.equals("O-O-O")) {
+                int[] result = handleLongCastle(gs);
+                validMove = result[0] == 1;
+                alreadyWrong = result[1] == 1;
+            }
+            // piece moves (Nf3, Qxe5, Rad1, ...)
+            else if (move.length() == 3
+                    || move.length() == 4 && Character.isUpperCase(move.charAt(0))
+                    || move.length() == 5 && Character.isUpperCase(move.charAt(0))) {
+                int[] result = handlePieceMove(move, gs);
+                validMove    = result[0] == 1;
+                alreadyWrong = result[1] == 1;
+                ambiguousMove = result[2] == 1;
+            }
+            // pawn capture (exd5, en passant)
+            else if (move.length() == 4 && Character.isLowerCase(move.charAt(0)) && move.charAt(1) == 'x') {
+                int[] result = handlePawnCapture(move, gs);
+                validMove    = result[0] == 1;
+                alreadyWrong = result[1] == 1;
+            }
+            else {
+                validMove = false;
+                alreadyWrong = true;
+            }
+
+            // check validation
+            if (validMove) {
+                int[] result = handleCheckValidation(gs, backupBoard);
+                if (result[0] == 0) {
+                    validMove = false;
+                    inCheck = true;
+                }
+            }
+
+            // pawn promotion
+            if (validMove) {
+                handlePromotion(myScanner, gs);
+            }
+
+            // move history / 50-move count update
+            if (validMove) {
+                int row = -1, colunm = -1;
+                // find destination square from move string for 50-move count
+                row    = getMoveDestRow(move, gs.ChessBoard);
+                colunm = getMoveDestCol(move, gs.ChessBoard);
+                boolean isCapture = (row >= 0 && colunm >= 0 && backupBoard[row][colunm] != 0);
+                boolean isPawnMove2 = (row >= 0 && colunm >= 0 && gs.ChessBoard[row][colunm] % 10 == 1);
+                if (isCapture || isPawnMove2) gs.fiftyMoveDrawCount = 0;
+                else gs.fiftyMoveDrawCount++;
+                gs.positionHistory.add(boardToString(gs.ChessBoard));
+                updateMoveHistory(move, gs, backupBoard);
+            }
+
+            // change player
+            if (validMove) {
+                gs.whiteToMove = !gs.whiteToMove;
+            }
+        }
+    }
+
+    // ============ handlePawnMove: handle simple pawn push (e4, d5, ...) ============
+    // returns int[]{validMove, alreadyWrong}  (1=true, 0=false)
+    public static int[] handlePawnMove(String move, GameState gs) {
+        int colunm = alphaToNum(move.charAt(0)) - 1;
+        int row    = 8 - Character.getNumericValue(move.charAt(1));
+
+        if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && gs.ChessBoard[row][colunm] == 0) {
+            int toAdd = gs.whiteToMove ? 1 : -1;
+            int whosePiece = gs.whiteToMove ? 1 : 11;
+
+            // one square forward
+            if ((row + toAdd >= 0) && (row + toAdd < 8) && (gs.ChessBoard[row + toAdd][colunm] == whosePiece)) {
+                gs.ChessBoard[row + toAdd][colunm] = 0;
+                gs.ChessBoard[row][colunm] = whosePiece;
+                return new int[]{1, 0};
+            }
+            // two squares forward (starter boost)
+            else if ((row + toAdd*2 >= 0) && (row + toAdd*2 < 8)
+                    && (gs.ChessBoard[row + (toAdd*2)][colunm] == whosePiece)
+                    && (gs.ChessBoard[row + toAdd][colunm] == 0)
+                    && ((row + (toAdd * 2) == 1) || (row + (toAdd * 2) == 6))) {
+                gs.ChessBoard[row + (toAdd*2)][colunm] = 0;
+                gs.ChessBoard[row][colunm] = whosePiece;
+                gs.enPassantMoveCount += 1;
+                gs.enPassantRow = row + toAdd;
+                gs.enPassantColunm = colunm;
+                return new int[]{1, 0};
+            }
+            else {
+                return new int[]{0, 1};
+            }
+        }
+        return new int[]{0, 1};
+    }
+
+    // ============ handleShortCastle: handle O-O / 0-0 ============
+    // returns int[]{validMove, alreadyWrong}
+    public static int[] handleShortCastle(GameState gs) {
+        int whoseKing = gs.whiteToMove ? 5 : 15;
+        int whoseRook = gs.whiteToMove ? 4 : 14;
+        int tempRow   = gs.whiteToMove ? 7 : 0;
+
+        if (gs.ChessBoard[tempRow][7] != whoseRook) {
+            if (gs.whiteToMove) gs.whiteShortCastle = false;
+            else gs.blackShortCastle = false;
+            return new int[]{0, 1};
+        }
+        if ((gs.ChessBoard[tempRow][5] == 0 && gs.ChessBoard[tempRow][6] == 0
+                && !isThisSquareUnderAttack(tempRow, 4, !gs.whiteToMove, gs.ChessBoard)
+                && !isThisSquareUnderAttack(tempRow, 5, !gs.whiteToMove, gs.ChessBoard)
+                && !isThisSquareUnderAttack(tempRow, 6, !gs.whiteToMove, gs.ChessBoard))
+                && ((gs.whiteToMove && gs.whiteShortCastle) || (!gs.whiteToMove && gs.blackShortCastle))) {
+            gs.ChessBoard[tempRow][4] = 0;
+            gs.ChessBoard[tempRow][5] = whoseRook;
+            gs.ChessBoard[tempRow][6] = whoseKing;
+            gs.ChessBoard[tempRow][7] = 0;
+            if (gs.whiteToMove) { gs.whiteShortCastle = false; gs.whiteLongCastle = false; }
+            else                { gs.blackShortCastle = false; gs.blackLongCastle = false; }
+            return new int[]{1, 0};
+        }
+        return new int[]{0, 1};
+    }
+
+    // ============ handleLongCastle: handle O-O-O / 0-0-0 ============
+    // returns int[]{validMove, alreadyWrong}
+    public static int[] handleLongCastle(GameState gs) {
+        int whoseKing = gs.whiteToMove ? 5 : 15;
+        int whoseRook = gs.whiteToMove ? 4 : 14;
+        int tempRow   = gs.whiteToMove ? 7 : 0;
+
+        if (gs.ChessBoard[tempRow][0] != whoseRook) {
+            if (gs.whiteToMove) gs.whiteLongCastle = false;
+            else gs.blackLongCastle = false;
+            return new int[]{0, 1};
+        }
+        if ((gs.ChessBoard[tempRow][3] == 0 && gs.ChessBoard[tempRow][2] == 0 && gs.ChessBoard[tempRow][1] == 0
+                && !isThisSquareUnderAttack(tempRow, 4, !gs.whiteToMove, gs.ChessBoard)
+                && !isThisSquareUnderAttack(tempRow, 3, !gs.whiteToMove, gs.ChessBoard)
+                && !isThisSquareUnderAttack(tempRow, 2, !gs.whiteToMove, gs.ChessBoard))
+                && ((gs.whiteToMove && gs.whiteLongCastle) || (!gs.whiteToMove && gs.blackLongCastle))) {
+            gs.ChessBoard[tempRow][4] = 0;
+            gs.ChessBoard[tempRow][3] = whoseRook;
+            gs.ChessBoard[tempRow][2] = whoseKing;
+            gs.ChessBoard[tempRow][0] = 0;
+            if (gs.whiteToMove) { gs.whiteShortCastle = false; gs.whiteLongCastle = false; }
+            else                { gs.blackShortCastle = false; gs.blackLongCastle = false; }
+            return new int[]{1, 0};
+        }
+        return new int[]{0, 1};
+    }
+
+    // ============ handlePieceMove: handle piece moves (Nf3, Qxe5, Rad1, ...) ============
+    // returns int[]{validMove, alreadyWrong, ambiguousMove}
+    public static int[] handlePieceMove(String move, GameState gs) {
+        boolean takes = false;
+        char specify = ' ';
+        boolean successfulMove = true;
+        int piece = 0;
+        int colunm = 0;
+        int row = 0;
+
+        if (move.length() == 3) {
+            piece  = PieceToNum(move.charAt(0));
+            colunm = alphaToNum(move.charAt(1)) - 1;
+            row    = 8 - Character.getNumericValue(move.charAt(2));
+        }
+        else if (move.length() == 4 && move.charAt(1) == 'x'
+                && (move.charAt(2) >= 'a' && move.charAt(2) <= 'h')
+                && (move.charAt(3) >= '1' && move.charAt(3) <= '8')) {
+            piece  = PieceToNum(move.charAt(0));
+            colunm = alphaToNum(move.charAt(2)) - 1;
+            row    = 8 - Character.getNumericValue(move.charAt(3));
+            takes  = true;
+        }
+        else if (move.length() == 4
+                && ((move.charAt(1) >= 'a' && move.charAt(1) <= 'h') || (move.charAt(1) >= '1' && move.charAt(1) <= '8'))
+                && (move.charAt(2) >= 'a' && move.charAt(2) <= 'h')
+                && (move.charAt(3) >= '1' && move.charAt(3) <= '8')) {
+            piece   = PieceToNum(move.charAt(0));
+            colunm  = alphaToNum(move.charAt(2)) - 1;
+            row     = 8 - Character.getNumericValue(move.charAt(3));
+            specify = move.charAt(1);
+        }
+        else if (move.length() == 5 && move.charAt(2) == 'x'
+                && ((move.charAt(1) >= 'a' && move.charAt(1) <= 'h') || (move.charAt(1) >= '1' && move.charAt(1) <= '8'))
+                && (move.charAt(3) >= 'a' && move.charAt(3) <= 'h')
+                && (move.charAt(4) >= '1' && move.charAt(4) <= '8')) {
+            piece   = PieceToNum(move.charAt(0));
+            colunm  = alphaToNum(move.charAt(3)) - 1;
+            row     = 8 - Character.getNumericValue(move.charAt(4));
+            specify = move.charAt(1);
+            takes   = true;
+        }
+        else {
+            successfulMove = false;
+        }
+
+        if (takes && row >= 0 && row < 8 && colunm >= 0 && colunm < 8 && gs.ChessBoard[row][colunm] == 0) {
+            return new int[]{0, 1, 0};
+        }
+
+        if (!successfulMove) return new int[]{0, 1, 0};
+
+        int whosePiece = piece;
+        if (!gs.whiteToMove) whosePiece += 10;
+
+        //================================The Knight==================================
+        if (piece == 2) {
+            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8
+                    && (gs.ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(gs.ChessBoard[row][colunm], whosePiece))) {
+                int[] knightJumpVertical   = {+2, +2, +1, +1, -1, -1, -2, -2};
+                int[] knightJumpHorizontal = {+1, -1, +2, -2, +2, -2, +1, -1};
+                int knightCount = 0;
+                ArrayList<Integer> knightColumn = new ArrayList<>();
+                ArrayList<Integer> knightRow    = new ArrayList<>();
+
+                for (int i = 0; i < 8; i++) {
+                    if (((colunm + knightJumpHorizontal[i] >= 0) && (colunm + knightJumpHorizontal[i] <= 7))
+                            && ((row + knightJumpVertical[i] >= 0) && (row + knightJumpVertical[i] <= 7))) {
+                        if (gs.ChessBoard[row + knightJumpVertical[i]][colunm + knightJumpHorizontal[i]] == whosePiece) {
+                            knightCount++;
+                            knightColumn.add(colunm + knightJumpHorizontal[i]);
+                            knightRow.add(row + knightJumpVertical[i]);
+                        }
+                    }
+                }
+                if (knightCount >= 1) {
+                    if (knightCount == 1) {
+                        gs.ChessBoard[knightRow.get(0)][knightColumn.get(0)] = 0;
+                        gs.ChessBoard[row][colunm] = whosePiece;
+                        return new int[]{1, 0, 0};
+                    } else if (specify != ' ') {
+                        int[] res = resolveAmbiguous(specify, knightRow, knightColumn, knightCount, row, colunm, whosePiece, gs.ChessBoard);
+                        return res;
+                    } else {
+                        return new int[]{0, 0, 1};
+                    }
+                } else {
+                    return new int[]{0, 1, 0};
+                }
+            }
+            return new int[]{0, 1, 0};
+        }
+
+        //============================The Bishop================================
+        if (piece == 3) {
+            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8
+                    && (gs.ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(gs.ChessBoard[row][colunm], whosePiece))) {
+                int[] bishopMoveVertical   = {+1, +1, -1, -1};
+                int[] bishopMoveHorizontal = {+1, -1, -1, +1};
+                int bishopCount = 0;
+                ArrayList<Integer> bishopColumn = new ArrayList<>();
+                ArrayList<Integer> bishopRow    = new ArrayList<>();
+
+                for (int i = 0; i < 4; i++) {
+                    int magnitude = 1;
+                    while ((row + (bishopMoveVertical[i] * magnitude) >= 0) && (colunm + (bishopMoveHorizontal[i] * magnitude) >= 0)
+                            && (row + (bishopMoveVertical[i] * magnitude) <= 7) && (colunm + (bishopMoveHorizontal[i] * magnitude) <= 7)) {
+                        int tr = row + bishopMoveVertical[i] * magnitude;
+                        int tc = colunm + bishopMoveHorizontal[i] * magnitude;
+                        if (gs.ChessBoard[tr][tc] == whosePiece) {
+                            bishopCount++;
+                            bishopColumn.add(tc);
+                            bishopRow.add(tr);
+                            break;
+                        } else if (gs.ChessBoard[tr][tc] == 0) {
+                            magnitude++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if (bishopCount >= 1) {
+                    if (bishopCount == 1) {
+                        gs.ChessBoard[bishopRow.get(0)][bishopColumn.get(0)] = 0;
+                        gs.ChessBoard[row][colunm] = whosePiece;
+                        return new int[]{1, 0, 0};
+                    } else if (specify != ' ') {
+                        return resolveAmbiguous(specify, bishopRow, bishopColumn, bishopCount, row, colunm, whosePiece, gs.ChessBoard);
+                    } else {
+                        return new int[]{0, 0, 1};
+                    }
+                } else {
+                    return new int[]{0, 1, 0};
+                }
+            }
+            return new int[]{0, 1, 0};
+        }
+
+        //===============================THE ROOK================================
+        if (piece == 4) {
+            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8
+                    && (gs.ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(gs.ChessBoard[row][colunm], whosePiece))) {
+                int[] rookMoveVertical   = {1, 0, -1, 0};
+                int[] rookMoveHorizontal = {0, -1, 0, 1};
+                int rookCount = 0;
+                ArrayList<Integer> rookColumn = new ArrayList<>();
+                ArrayList<Integer> rookRow    = new ArrayList<>();
+
+                for (int i = 0; i < 4; i++) {
+                    int magnitude = 1;
+                    while ((row + (rookMoveVertical[i] * magnitude) >= 0) && (colunm + (rookMoveHorizontal[i] * magnitude) >= 0)
+                            && (row + (rookMoveVertical[i] * magnitude) <= 7) && (colunm + (rookMoveHorizontal[i] * magnitude) <= 7)) {
+                        int tr = row + rookMoveVertical[i] * magnitude;
+                        int tc = colunm + rookMoveHorizontal[i] * magnitude;
+                        if (gs.ChessBoard[tr][tc] == whosePiece) {
+                            rookCount++;
+                            rookColumn.add(tc);
+                            rookRow.add(tr);
+                            break;
+                        } else if (gs.ChessBoard[tr][tc] == 0) {
+                            magnitude++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if (rookCount >= 1) {
+                    if (rookCount == 1) {
+                        int rCol = rookColumn.get(0), rRow = rookRow.get(0);
+                        gs.ChessBoard[rRow][rCol] = 0;
+                        gs.ChessBoard[row][colunm] = whosePiece;
+                        updateRookCastleFlags(gs, rCol);
+                        return new int[]{1, 0, 0};
+                    } else if (specify != ' ') {
+                        int[] res = resolveAmbiguous(specify, rookRow, rookColumn, rookCount, row, colunm, whosePiece, gs.ChessBoard);
+                        if (res[0] == 1) updateRookCastleFlags(gs, getMoveSourceCol(specify, rookRow, rookColumn, rookCount));
+                        return res;
+                    } else {
+                        return new int[]{0, 0, 1};
+                    }
+                } else {
+                    return new int[]{0, 1, 0};
+                }
+            }
+            return new int[]{0, 1, 0};
+        }
+
+        //================================The King====================================
+        if (piece == 5) {
+            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8
+                    && (gs.ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(gs.ChessBoard[row][colunm], whosePiece))) {
+                int[] kingMoveVertical   = {1, 1, 0, -1, -1, -1, 0, 1};
+                int[] kingMoveHorizontal = {0, -1, -1, -1, 0, 1, 1, 1};
+                boolean isKingMoved = false;
+
+                for (int i = 0; i < 8; i++) {
+                    if ((colunm + kingMoveHorizontal[i] >= 0) && (colunm + kingMoveHorizontal[i] <= 7)
+                            && (row + kingMoveVertical[i] >= 0) && (row + kingMoveVertical[i] <= 7)) {
+                        if (gs.ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] == whosePiece) {
+                            gs.ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] = 0;
+                            if (isThisSquareUnderAttack(row, colunm, !gs.whiteToMove, gs.ChessBoard)) {
+                                gs.ChessBoard[row + kingMoveVertical[i]][colunm + kingMoveHorizontal[i]] = whosePiece;
+                                break;
+                            } else {
+                                gs.ChessBoard[row][colunm] = whosePiece;
+                                isKingMoved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (isKingMoved) {
+                    if (gs.whiteToMove) { gs.whiteLongCastle = false; gs.whiteShortCastle = false; }
+                    else                { gs.blackLongCastle = false; gs.blackShortCastle = false; }
+                    return new int[]{1, 0, 0};
+                }
+                return new int[]{0, 1, 0};
+            }
+            return new int[]{0, 1, 0};
+        }
+
+        //==================================The Queen==============================
+        if (piece == 6) {
+            if (row >= 0 && row < 8 && colunm >= 0 && colunm < 8
+                    && (gs.ChessBoard[row][colunm] == 0 || isThisAndThatEnemyPiece(gs.ChessBoard[row][colunm], whosePiece))) {
+                int[] queenMoveVertical   = {1, 1, 0, -1, -1, -1, 0, 1};
+                int[] queenMoveHorizontal = {0, -1, -1, -1, 0, 1, 1, 1};
+                int queenCount = 0;
+                ArrayList<Integer> queenColumn = new ArrayList<>();
+                ArrayList<Integer> queenRow    = new ArrayList<>();
+
+                for (int i = 0; i < 8; i++) {
+                    int magnitude = 1;
+                    while ((row + (queenMoveVertical[i] * magnitude) >= 0) && (colunm + (queenMoveHorizontal[i] * magnitude) >= 0)
+                            && (row + (queenMoveVertical[i] * magnitude) <= 7) && (colunm + (queenMoveHorizontal[i] * magnitude) <= 7)) {
+                        int tr = row + queenMoveVertical[i] * magnitude;
+                        int tc = colunm + queenMoveHorizontal[i] * magnitude;
+                        if (gs.ChessBoard[tr][tc] == whosePiece) {
+                            queenCount++;
+                            queenColumn.add(tc);
+                            queenRow.add(tr);
+                            break;
+                        } else if (gs.ChessBoard[tr][tc] == 0) {
+                            magnitude++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if (queenCount >= 1) {
+                    if (queenCount == 1) {
+                        gs.ChessBoard[queenRow.get(0)][queenColumn.get(0)] = 0;
+                        gs.ChessBoard[row][colunm] = whosePiece;
+                        return new int[]{1, 0, 0};
+                    } else if (specify != ' ') {
+                        return resolveAmbiguous(specify, queenRow, queenColumn, queenCount, row, colunm, whosePiece, gs.ChessBoard);
+                    } else {
+                        return new int[]{0, 0, 1};
+                    }
+                } else {
+                    return new int[]{0, 1, 0};
+                }
+            }
+            return new int[]{0, 1, 0};
+        }
+
+        return new int[]{0, 1, 0};
+    }
+
+    // ============ resolveAmbiguous: resolve ambiguous piece move ============
+    // returns int[]{validMove, alreadyWrong, ambiguousMove}
+    public static int[] resolveAmbiguous(char specify, ArrayList<Integer> pieceRow, ArrayList<Integer> pieceColumn,
+            int pieceCount, int destRow, int destCol, int whosePiece, int[][] board) {
+        int countHasToBe1 = 0;
+        int pCol = 0, pRow = 0;
+        if (specify >= 'a' && specify <= 'h') {
+            for (int i = 0; i < pieceCount; i++) {
+                if (pieceColumn.get(i) == alphaToNum(specify) - 1) {
+                    pCol = pieceColumn.get(i);
+                    pRow = pieceRow.get(i);
+                    countHasToBe1++;
+                }
+            }
+            if (countHasToBe1 == 1) {
+                board[pRow][pCol] = 0;
+                board[destRow][destCol] = whosePiece;
+                return new int[]{1, 0, 0};
+            } else {
+                return new int[]{0, 0, 1};
+            }
+        } else if (specify >= '1' && specify <= '8') {
+            for (int i = 0; i < pieceCount; i++) {
+                if (pieceRow.get(i) == (8 - Character.getNumericValue(specify))) {
+                    pCol = pieceColumn.get(i);
+                    pRow = pieceRow.get(i);
+                    countHasToBe1++;
+                }
+            }
+            if (countHasToBe1 == 1) {
+                board[pRow][pCol] = 0;
+                board[destRow][destCol] = whosePiece;
+                return new int[]{1, 0, 0};
+            } else {
+                return new int[]{0, 0, 1};
+            }
+        }
+        return new int[]{0, 1, 0};
+    }
+
+    // ============ updateRookCastleFlags: disable castling right after rook moves ============
+    public static void updateRookCastleFlags(GameState gs, int rookCol) {
+        if (gs.whiteToMove) {
+            if (rookCol == 7) gs.whiteShortCastle = false;
+            else if (rookCol == 0) gs.whiteLongCastle = false;
+        } else {
+            if (rookCol == 7) gs.blackShortCastle = false;
+            else if (rookCol == 0) gs.blackLongCastle = false;
+        }
+    }
+
+    // helper: get source column of an ambiguous piece
+    public static int getMoveSourceCol(char specify, ArrayList<Integer> pieceRow, ArrayList<Integer> pieceColumn, int pieceCount) {
+        if (specify >= 'a' && specify <= 'h') {
+            for (int i = 0; i < pieceCount; i++) {
+                if (pieceColumn.get(i) == alphaToNum(specify) - 1) return pieceColumn.get(i);
+            }
+        } else if (specify >= '1' && specify <= '8') {
+            for (int i = 0; i < pieceCount; i++) {
+                if (pieceRow.get(i) == (8 - Character.getNumericValue(specify))) return pieceColumn.get(i);
+            }
+        }
+        return -1;
+    }
+
+    // ============ handlePawnCapture: handle pawn captures and en passant ============
+    // returns int[]{validMove, alreadyWrong}
+    public static int[] handlePawnCapture(String move, GameState gs) {
+        if ((move.charAt(2) >= 'a' && move.charAt(2) <= 'h')
+                && (move.charAt(3) >= '1' && move.charAt(3) <= '8')
+                && move.charAt(0) >= 'a' && move.charAt(0) <= 'h') {
+            int pawn   = alphaToNum(move.charAt(0)) - 1;
+            int colunm = alphaToNum(move.charAt(2)) - 1;
+            int row    = 8 - Character.getNumericValue(move.charAt(3));
+            int whosePiece = gs.whiteToMove ? 1 : 11;
+            int toAdd  = gs.whiteToMove ? 1 : -1;
+
+            // normal capture
+            if ((row + toAdd >= 0) && (row + toAdd < 8)
+                    && (gs.ChessBoard[row][colunm] != 0)
+                    && (gs.ChessBoard[row + toAdd][pawn] == whosePiece)
+                    && (colunm + 1 == pawn || colunm - 1 == pawn)) {
+                gs.ChessBoard[row][colunm] = whosePiece;
+                gs.ChessBoard[row + toAdd][pawn] = 0;
+                return new int[]{1, 0};
+            }
+            // en passant
+            else if (gs.enPassantAble && row == gs.enPassantRow && colunm == gs.enPassantColunm
+                    && (gs.ChessBoard[row + toAdd][pawn] == whosePiece)
+                    && (colunm + 1 == pawn || colunm - 1 == pawn)
+                    && (gs.ChessBoard[row][colunm] == 0)) {
+                gs.ChessBoard[row][colunm] = whosePiece;
+                gs.ChessBoard[row + toAdd][pawn] = 0;
+                gs.ChessBoard[row + toAdd][colunm] = 0;
+                return new int[]{1, 0};
+            }
+            return new int[]{0, 1};
+        }
+        return new int[]{0, 1};
+    }
+
+    // ============ handleCheckValidation: undo move if king is still in check ============
+    // returns int[]{1} if king is safe, int[]{0} if still in check
+    public static int[] handleCheckValidation(GameState gs, int[][] backupBoard) {
+        int myKing = gs.whiteToMove ? 5 : 15;
+        int kingRow = -1, kingCol = -1;
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (gs.ChessBoard[i][j] == myKing) {
+                    kingRow = i;
+                    kingCol = j;
+                    break;
+                }
+            }
+        }
+        if (isThisSquareUnderAttack(kingRow, kingCol, !gs.whiteToMove, gs.ChessBoard)) {
+            for (int i = 0; i < 8; i++) {
+                gs.ChessBoard[i] = Arrays.copyOf(backupBoard[i], 8);
+            }
+            return new int[]{0};
+        }
+        return new int[]{1};
+    }
+
+    // ============ handlePromotion: handle pawn promotion ============
+    public static void handlePromotion(Scanner myScanner, GameState gs) {
+        int promotionRow   = gs.whiteToMove ? 0 : 7;
+        int promotingPawn  = gs.whiteToMove ? 1 : 11;
+
+        for (int col = 0; col < 8; col++) {
+            if (gs.ChessBoard[promotionRow][col] == promotingPawn) {
                 clearTerminal();
-                System.out.print("""
+                display(gs.ChessBoard, gs.moveHistory);
+                System.out.println("______________________________________");
+
+                char choice = ' ';
+                boolean correctPiece = true;
+                while (choice != 'Q' && choice != 'R' && choice != 'B' && choice != 'N') {
+                    if (correctPiece) {
+                        correctPiece = false;
+                        System.out.print("Choose piece (Q/R/B/N): ");
+                    } else {
+                        System.out.print("Invalid. Please choose among these (Q/R/B/N): ");
+                    }
+                    choice = myScanner.next().toUpperCase().charAt(0);
+                }
+                int promotedPiece = 0;
+                if      (choice == 'Q') promotedPiece = 6;
+                else if (choice == 'R') promotedPiece = 4;
+                else if (choice == 'B') promotedPiece = 3;
+                else if (choice == 'N') promotedPiece = 2;
+                if (!gs.whiteToMove) promotedPiece += 10;
+                gs.ChessBoard[promotionRow][col] = promotedPiece;
+            }
+        }
+    }
+
+    // ============ getMoveDestRow/Col: extract destination from move string ============
+    public static int getMoveDestRow(String move, int[][] board) {
+        try {
+            if (move.length() == 2) return 8 - Character.getNumericValue(move.charAt(1));
+            if (move.length() == 3) return 8 - Character.getNumericValue(move.charAt(2));
+            if (move.length() == 4) return 8 - Character.getNumericValue(move.charAt(3));
+            if (move.length() == 5) return 8 - Character.getNumericValue(move.charAt(4));
+        } catch (Exception e) {}
+        return -1;
+    }
+
+    public static int getMoveDestCol(String move, int[][] board) {
+        try {
+            if (move.length() == 2) return alphaToNum(move.charAt(0)) - 1;
+            if (move.length() == 3) return alphaToNum(move.charAt(1)) - 1;
+            if (move.length() == 4 && move.charAt(1) == 'x') return alphaToNum(move.charAt(2)) - 1;
+            if (move.length() == 4) return alphaToNum(move.charAt(2)) - 1;
+            if (move.length() == 5) return alphaToNum(move.charAt(3)) - 1;
+        } catch (Exception e) {}
+        return -1;
+    }
+
+    // ============ updateMoveHistory: append move notation to history ============
+    public static void updateMoveHistory(String move, GameState gs, int[][] backupBoard) {
+        int row    = getMoveDestRow(move, gs.ChessBoard);
+        int colunm = getMoveDestCol(move, gs.ChessBoard);
+        boolean isCapture = (row >= 0 && colunm >= 0 && backupBoard[row][colunm] != 0);
+
+        String moveLog = move;
+        if (move.equals("O-O"))       moveLog = "0-0";
+        else if (move.equals("O-O-O")) moveLog = "0-0-0";
+        else {
+            if (isCapture && move.length() == 3 && Character.isUpperCase(move.charAt(0))) {
+                moveLog = move.charAt(0) + "x" + move.substring(1);
+            }
+            int enemyKing = gs.whiteToMove ? 15 : 5;
+            int enemyKingRow = 0, enemyKingCol = 0;
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (gs.ChessBoard[i][j] == enemyKing) {
+                        enemyKingRow = i;
+                        enemyKingCol = j;
+                        break;
+                    }
+                }
+            }
+            if (isThisSquareUnderAttack(enemyKingRow, enemyKingCol, gs.whiteToMove, gs.ChessBoard)) {
+                if (whatKindOfMate(!gs.whiteToMove, gs.ChessBoard) == 1) moveLog += "#";
+                else moveLog += "+";
+            }
+        }
+        gs.moveHistory.add(moveLog);
+    }
+
+    // ============ displayGameResult: print game result after game ends ============
+    public static void displayGameResult(GameState gs) {
+        display(gs.ChessBoard, gs.moveHistory);
+        System.out.println("______________________________________");
+
+        if (gs.isBlackResigned || gs.isWhiteResigned) {
+            System.out.println("Resigned!");
+            if (gs.isWhiteResigned) System.out.println("Black wins!!  (0 - 1)");
+            else System.out.println("White WIns!!  (1 - 0)");
+        } else if (gs.drawAccepted) {
+            System.out.println("Draw by agreement!");
+            System.out.println("(1/2 - 1/2)");
+        } else if (gs.fiftyMoveDrawCount >= 100) {
+            System.out.println("Draw by 50-move Rule!");
+            System.out.println("(1/2 - 1/2)");
+        } else if (isInsufficientMaterial(gs.ChessBoard)) {
+            System.out.println("Draw by Insuficient Material!");
+            System.out.println("(1/2 - 1/2)");
+        } else if (isThreefoldRepetition(gs.positionHistory, gs.ChessBoard)) {
+            System.out.println("Draw by Threefold Repetition!");
+            System.out.println("(1/2 - 1/2)");
+        } else if (whatKindOfMate(gs.whiteToMove, gs.ChessBoard) == 1) {
+            System.out.println("Checkmate!");
+            if (gs.whiteToMove) System.out.println("Black wins!!  (0 - 1)");
+            else System.out.println("White wins!!  (1 - 0)");
+        } else {
+            System.out.println("Stalemate!");
+            System.out.println("(1/2 - 1/2)");
+        }
+    }
+
+    // ============ showHelp: print help / tutorial screen ============
+    public static void showHelp(Scanner myScanner) {
+        clearTerminal();
+        System.out.print("""
                 ===========================================
                 HELP
                 ===========================================
@@ -1276,19 +895,12 @@ public class Chess_Com{
                 Enter x to go back...
                 ===========================================
                 """);
-
-                String understand = myScanner.next();
-                while (!understand.equals("x")){
-                    understand = myScanner.next();
-                }
-            }
-
-
+        String understand = myScanner.next();
+        while (!understand.equals("x")) {
+            understand = myScanner.next();
         }
-
-        //White or Black WINS booboom you are magnus carlson-sout this
-
     }
+
 
 
 
